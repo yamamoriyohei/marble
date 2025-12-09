@@ -1,12 +1,12 @@
 :root {
-  --bg: #0c0d11;
-  --card: #12141b;
-  --accent: #96f7d2;
-  --accent-2: #7ec3ff;
-  --text: #e9edf4;
-  --muted: #8a93a7;
-  --border: #1f2230;
-  --glow: 0 10px 40px rgba(150, 247, 210, 0.18);
+  --bg: #f3ede5;
+  --card: #f9f6f0;
+  --accent: #d6b07c;
+  --accent-2: #b39c75;
+  --text: #2d241a;
+  --muted: #6a5c4d;
+  --border: #e0d6cb;
+  --glow: 0 14px 60px rgba(182, 143, 93, 0.18);
   --radius: 18px;
   font-family: 'Space Grotesk', system-ui, sans-serif;
 }
@@ -15,9 +15,10 @@
 
 body {
   margin: 0;
-  background: radial-gradient(150% 120% at 20% 20%, rgba(126, 195, 255, 0.12), transparent),
-              radial-gradient(120% 120% at 80% 0%, rgba(150, 247, 210, 0.12), transparent),
-              var(--bg);
+  background:
+    radial-gradient(120% 140% at 25% 20%, rgba(237, 222, 203, 0.65), transparent),
+    radial-gradient(120% 140% at 80% 0%, rgba(223, 206, 186, 0.6), transparent),
+    var(--bg);
   color: var(--text);
   min-height: 100vh;
 }
@@ -57,8 +58,8 @@ body {
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(18, 20, 27, 0.8);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 20px 60px rgba(57, 41, 26, 0.18);
 }
 
 .formula h3 { margin: 0 0 6px; }
@@ -72,11 +73,11 @@ body {
 }
 
 .canvas-panel {
-  background: linear-gradient(135deg, rgba(126, 195, 255, 0.07), rgba(150, 247, 210, 0.05));
+  background: linear-gradient(135deg, rgba(228, 214, 197, 0.45), rgba(241, 229, 214, 0.65));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.45);
+  box-shadow: 0 25px 80px rgba(57, 41, 26, 0.25);
 }
 
 canvas {
@@ -84,7 +85,7 @@ canvas {
   height: auto;
   border-radius: 12px;
   display: block;
-  background: #020305;
+  background: #f7f2ea;
 }
 
 .control-panel .panel {
@@ -127,7 +128,7 @@ select, input[type="range"] {
 }
 
 select {
-  background: #0e1017;
+  background: #f5eee4;
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
@@ -141,8 +142,8 @@ select {
 }
 
 .control {
-  background: #0f1218;
-  border: 1px solid var(--border);
+  background: #f2ebe1;
+  border: 1px solid rgba(160, 137, 103, 0.18);
   padding: 12px;
   border-radius: 12px;
 }
@@ -185,27 +186,27 @@ button:active { transform: translateY(1px); }
 
 .primary {
   background: linear-gradient(120deg, var(--accent), var(--accent-2));
-  color: #0c0d11;
-  box-shadow: 0 10px 30px rgba(126, 195, 255, 0.28);
+  color: #2d241a;
+  box-shadow: 0 12px 32px rgba(182, 143, 93, 0.28);
 }
 
 .secondary {
-  background: #161925;
+  background: #ede2d3;
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(160, 137, 103, 0.28);
 }
 
 .ghost {
   background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(160, 137, 103, 0.36);
 }
 
 .badge {
   display: inline-block;
-  background: rgba(150, 247, 210, 0.12);
+  background: rgba(182, 143, 93, 0.12);
   color: var(--accent);
-  border: 1px solid rgba(150, 247, 210, 0.25);
+  border: 1px solid rgba(182, 143, 93, 0.25);
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;

@@ -80,17 +80,48 @@ function fbm(x, y, octaves, rng) {
   return value / (1 - Math.pow(0.5, octaves));
 }
 
-// コサインパレットによる色生成 (滑らかなグラデーション)
-// t: 0〜1の値, a,b,c,d: パレットパラメータ(RGBベクトル)
-function cosinePalette(t, a, b, c, d) {
-  const rgb = [];
-  for(let i=0; i<3; i++) {
-    // color = a + b * cos( 2π * (c * t + d) )
-    rgb[i] = a[i] + b[i] * Math.cos(6.28318 * (c[i] * t + d[i]));
-    rgb[i] = Math.min(1, Math.max(0, rgb[i])); // 0-1にクランプ
-  }
-  return rgb;
+function mixColor(a, b, t) {
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t,
+  ];
 }
+
+const marblePalettes = [
+  {
+    name: 'Carrara',
+    baseLight: [0.96, 0.94, 0.90],
+    baseDark: [0.88, 0.86, 0.82],
+    vein: [0.42, 0.37, 0.33],
+    highlight: [0.98, 0.97, 0.95],
+    sharpness: 4,
+  },
+  {
+    name: 'Calacatta',
+    baseLight: [0.97, 0.95, 0.91],
+    baseDark: [0.91, 0.88, 0.83],
+    vein: [0.62, 0.50, 0.36],
+    highlight: [1.0, 0.96, 0.90],
+    sharpness: 5,
+  },
+  {
+    name: 'Verde',
+    baseLight: [0.90, 0.93, 0.90],
+    baseDark: [0.78, 0.83, 0.80],
+    vein: [0.24, 0.34, 0.28],
+    highlight: [0.84, 0.91, 0.82],
+    sharpness: 3.5,
+  },
+  {
+    name: 'Nero',
+    baseLight: [0.28, 0.30, 0.32],
+    baseDark: [0.14, 0.16, 0.18],
+    vein: [0.88, 0.86, 0.80],
+    highlight: [0.96, 0.93, 0.86],
+    sharpness: 6,
+  },
+];
 
 // --- メイン生成関数 ---
 function generateMarble(w, h, params) {
@@ -100,18 +131,14 @@ function generateMarble(w, h, params) {
   
   // 乱数生成器の初期化
   const rngBase = mulberry32(seed);
+  const palette = marblePalettes[Math.floor(rngBase() * marblePalettes.length)];
   // 各FBMレイヤーで少し異なる乱数を使うためのサブRNG
   const rngQx = mulberry32(rngBase() * 0xffffffff);
   const rngQy = mulberry32(rngBase() * 0xffffffff);
   const rngRx = mulberry32(rngBase() * 0xffffffff);
   const rngRy = mulberry32(rngBase() * 0xffffffff);
   const rngFinal = mulberry32(rngBase() * 0xffffffff);
-
-  // 色のパレット定義 (大理石っぽい色調)
-  const palA = [0.5, 0.5, 0.5];
-  const palB = [0.5, 0.5, 0.5];
-  const palC = [1.0, 1.0, 1.0];
-  const palD = [0.00, 0.33, 0.67]; // 位相をずらして色相変化を作る
+  const rngVein = mulberry32(rngBase() * 0xffffffff);
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -124,30 +151,42 @@ function generateMarble(w, h, params) {
       // --- ドメインワーピング (Domain Warping) ---
       // 座標をノイズの値でずらすことを繰り返すことで、渦巻くような歪みを作る。
 
-      // 第1段階の歪みベクトル q を計算
+      // 第1段階の歪みベクトル q を計算（ベースのうねり）
       let qx = fbm(px, py, complexity, rngQx);
       let qy = fbm(px + 5.2, py + 1.3, complexity, rngQy); // 座標を少しずらして別のノイズを得る
 
-      // 第2段階の歪みベクトル r を計算
-      // 元の座標に q を加えた場所のノイズをサンプリングする
+      // 第2段階の歪みベクトル r を計算（微細な細さの流れ）
       let rx = fbm(px + distortion * qx, py + distortion * qy, complexity, rngRx);
       let ry = fbm(px + distortion * qx + 1.7, py + distortion * qy + 9.2, complexity, rngRy);
 
       // 最終的な模様の値 f を計算
-      // さらに r で座標をずらしてサンプリング。これが強いクネクネ感を生む。
-      let f = fbm(px + distortion * rx, py + distortion * ry, complexity, rngFinal);
-      
-      // --- 色付け ---
-      
+      let f = fbm(px + distortion * rx, py + distortion * ry, complexity + 1, rngFinal);
+
+      // 走るような脈を追加
+      const flow = Math.sin(px * 1.6 + rx * 6.0 + ry * 3.4);
+      const veinNoise = fbm(px * 2.5 + qx * 1.2, py * 2.5 + qy * 1.4, complexity + 2, rngVein);
+      let veins = 1 - Math.abs(flow - veinNoise);
+      veins = Math.pow(Math.max(0, veins), palette.sharpness); // 細いひび割れ感
+
       // コントラスト調整 (シグモイド関数風のカーブでメリハリをつける)
-      // f は0~1付近の値なので、中心を0.5として強調する
       f = (f - 0.5) * contrast + 0.5;
       f = Math.min(1.0, Math.max(0.0, f)); // 0-1にクランプ
 
-      // 計算した値 f を使ってパレットから色を取得
-      // fの値を少し変換して色の変化にバリエーションを持たせる
-      const colorVal = f + 0.6 * rx; // 歪み成分も色に少し影響させる
-      const rgb = cosinePalette(colorVal, palA, palB, palC, palD);
+      // ベースの石肌
+      const baseColor = mixColor(palette.baseLight, palette.baseDark, f + 0.1 * rx);
+      // 脈の色
+      const veinAmount = Math.min(1, veins * 0.9 + f * 0.15);
+      let rgb = mixColor(baseColor, palette.vein, veinAmount);
+
+      // 細いハイライトを重ねる
+      const hairline = Math.pow(Math.max(0, Math.sin(px * 5.0 + ry * 7.0)), 8);
+      if (hairline > 0.01) {
+        rgb = mixColor(rgb, palette.highlight, Math.min(0.5, hairline * 0.6));
+      }
+
+      // ざらつきのある石粉ノイズ
+      const grain = (rngBase() - 0.5) * 0.03;
+      rgb = rgb.map((c) => Math.min(1, Math.max(0, c + grain)));
 
       // ピクセルデータへの書き込み
       const idx = (x + y * w) * 4;
@@ -205,7 +244,7 @@ document.getElementById('randomize').addEventListener('click', () => {
 
 document.getElementById('export').addEventListener('click', () => {
   const link = document.createElement('a');
-  link.download = `marble_${controls.seed.value}.png`;
+  link.download = `marble_${currentSeed}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 });
